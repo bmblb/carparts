@@ -1,14 +1,18 @@
+import site_parsers
 import settings
-import requests
 
-def get_search_url(source, part_code):
-    return source['SEARCH_URL'].format(part_code = part_code)
-
-def parse(code, hint):
+def parse_part(code, hint):
+    result = []
+    
+    # collect output from parsers
     for source in settings.SOURCES:
-        url = get_search_url(source, code)
+        handle = site_parsers.parsers[source['PARSER']]
+        content = handle(code, hint)
         
-        r = requests.get(url)
-        
-        print(r.status_code)
+        if content != None and len(content):
+            result = result + content
+        else:
+            print('no content returned from the parser: ', source['PARSER'])
+            
+    return result
         
