@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, time
 from bs4 import BeautifulSoup
 from requests import request, Response
 import re
@@ -121,7 +121,16 @@ def get_key(map, key, target):
     return accessor(target)
 
 def get_data_from_json(data, code):
-    sources = [data['searchResult']['originals'], data['searchResult']['analogs']]
+    originals = data['searchResult']['originals']
+    analogs = data['searchResult']['analogs']
+    
+    if len(originals) == 0:
+        logging.warning('No originals for %s', code)
+    
+    if len(analogs) == 0:
+        logging.warning('No analongs for %s', code)
+    
+    sources = [originals, analogs]
     
     for source in sources:
         for item in source:
@@ -139,18 +148,48 @@ def get_data_from_json(data, code):
                     get_key(OFFER_MAPPING, 'working_hours', offer),
                     get_key(OFFER_MAPPING, 'delivery_duration', offer),
                 ]
-            
+
+global LAST_CALL_TIME
+
+LAST_CALL_TIME = 0
 
 def handle(code, hint):
+    global LAST_CALL_TIME
+    
+    logger = logging.getLogger(__name__)
+    
+    logger.info('Processing %s %s', code, hint)
+    print(time(), LAST_CALL_TIME)
+    # calculate time since last run
+    passed_time = time() - LAST_CALL_TIME
+    
+    if passed_time < 10:
+        delay = round(10 - passed_time)
+        logger.info('Sleeping for %s', delay)
+        # if not, sleep for some time
+        sleep(delay)
+    else:
+        logger.info('Making request asap')
+    
+    # after we've waited store the current time as last call time
+    LAST_CALL_TIME = time()
+    
     response: Response = request('GET', SEARCH_URL.format(art=code, make=hint, lat=LAT, lng=LNG, locid=LOC_ID), headers=HEADERS)
     
-    sleep(10)
-    
-    data = response.json()
-    
-    if data['errorMessage'] != '':
-        logging.error('Error searching for detail number: {}'.format(code))
-        logging.error(data['errorMessage'])
+    if response.status_code != 200:
+        logger.warning('Request to URL did not end up well')
+        logger.warning('URL: %s', response.url)
+        logger.warning('Code: %s', response.status_code)
+        
         yield ''
     else:
-        yield from get_data_from_json(data, code)
+        data = response.json()
+        
+        if data['errorMessage'] != '':
+            logger.error('Error searching for detail number: %s', code)
+            logger.error(data['errorMessage'])
+            
+            yield ''
+        else:
+            yield from get_data_from_json(data, code)
+
