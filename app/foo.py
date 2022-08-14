@@ -1,7 +1,6 @@
-import csv
+import csv, json, re
 from bs4 import BeautifulSoup
-import json
-import re
+import xlsxwriter
 from site_parsers.parser_emex.parser import get_data_from_json as emex_get_data
 
 
@@ -39,9 +38,19 @@ def emex_test():
             writer.writerow(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])    
             writer.writerows(result)
 
+
+def xls_test():
+    workbook = xlsxwriter.Workbook('test.xlsx')
+    worksheet = workbook.add_worksheet()
+    
+    worksheet.write_row(0, 0, ['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
+    
+    workbook.close()
+
 def main():
     # exist_test()
-    emex_test()
+    # emex_test()
+    xls_test()
     
 
 if __name__ == '__main__':

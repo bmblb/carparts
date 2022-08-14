@@ -1,6 +1,5 @@
-import csv, os, logging, sys, getopt
+import csv, os, logging, sys, argparse
 from logging.handlers import RotatingFileHandler
-from time import strftime, localtime, time
 import settings
 from parts_parser import parse_part
 
@@ -57,15 +56,12 @@ def setup_logging(loglevel):
 def main(argv):
     loglevel = 'ERROR'
     
-    try:
-        opts, args = getopt.getopt(argv, 'l:',['loglevel='])
-    except getopt.GetoptError:
-        print('main.py --loglevel=INFO')
-        sys.exit(1)
-        
-    for opt, arg in opts:
-        if opt in ('-l', '--loglevel'):
-            loglevel = arg
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='error', help='Set log level')
+    
+    args = parser.parse_args()
+    
+    loglevel = args.loglevel
 
     setup_logging(loglevel)
     

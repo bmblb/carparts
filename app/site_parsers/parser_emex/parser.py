@@ -129,6 +129,8 @@ def get_data_from_json(data, code):
     
     if len(analogs) == 0:
         logging.warning('No analongs for %s', code)
+        
+    logging.info('Originals: %s, Analogs: %s, Total: %s', len(originals), len(analogs), len(originals) + len(analogs))
     
     sources = [originals, analogs]
     
@@ -159,7 +161,7 @@ def handle(code, hint):
     logger = logging.getLogger(__name__)
     
     logger.info('Processing %s %s', code, hint)
-    print(time(), LAST_CALL_TIME)
+    
     # calculate time since last run
     passed_time = time() - LAST_CALL_TIME
     
