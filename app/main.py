@@ -1,6 +1,8 @@
-import csv, os
+import csv, os, logging
 import settings
 from parts_parser import parse_part
+
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 def read(path):
     with open(os.path.join(settings.INPUT_DIR, path), newline='') as input:
