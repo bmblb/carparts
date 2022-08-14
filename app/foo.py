@@ -2,6 +2,7 @@ import csv
 from bs4 import BeautifulSoup
 import json
 import re
+from site_parsers.parser_emex.parser import get_data_from_json as emex_get_data
 
 
 def check_content():
@@ -22,14 +23,25 @@ def check_content():
         # data = json.loads(json_data)
         # print(data[0])
     
-def csv_test():
+def exist_test():
     with open('../output/test.csv', 'w') as file:
         writer = csv.writer(file)
         
         writer.writerows([[1,2,3], [1,2,3]])
+        
+def emex_test():
+    with open('./site_parsers/parser_emex/resources/response.json') as input:
+        result = emex_get_data(json.loads(input.read()))
+        
+        with open('../output/emex_test.csv', 'w') as out:
+            writer = csv.writer(out)
+        
+            writer.writerow(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])    
+            writer.writerows(result)
 
 def main():
-    csv_test()
+    # exist_test()
+    emex_test()
     
 
 if __name__ == '__main__':
