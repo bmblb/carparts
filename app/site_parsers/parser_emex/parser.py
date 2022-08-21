@@ -1,8 +1,10 @@
+import json
 from time import sleep, time
 from bs4 import BeautifulSoup
-from requests import request, Response
+from requests import Response, Session, exceptions
 import re
 import logging
+from time import time
 
 '''
 Emex has a proper API we could use to get JSON objects from the backend
@@ -87,18 +89,6 @@ ITEM_MAPPING = {
     'delivery_duration': 'days'
 }
 
-HEADERS = {
-    'cookie': 'last-location=31448',
-    'Access-Control-Allow-Origin': 'https://emex.ru',
-    'Cache-Control': 'no-cache',
-    'DNT': '1',
-    'Pragma': 'no-cache',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-origin',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77'
-}
-
 def get_key(map, key, target):
     prop = map[key]
     accessor = lambda x: x
@@ -120,78 +110,117 @@ def get_key(map, key, target):
     
     return accessor(target)
 
-def get_data_from_json(data, code):
-    originals = data['searchResult']['originals']
-    analogs = data['searchResult']['analogs']
+class Emex():
+    name = 'Emex'
     
-    if len(originals) == 0:
-        logging.warning('No originals for %s', code)
-    
-    if len(analogs) == 0:
-        logging.warning('No analongs for %s', code)
+    def init(self):
+        session = Session()
         
-    logging.info('Originals: %s, Analogs: %s, Total: %s', len(originals), len(analogs), len(originals) + len(analogs))
-    
-    sources = [originals, analogs]
-    
-    for source in sources:
-        for item in source:
-            # code,id,manufacturer,part_number,rating,description,amount,price,working_hours,delivery_duration
-            for offer in item['offers']:
-                yield [
-                    code,
-                    get_key(MAPPING, 'id', item),
-                    get_key(MAPPING, 'manufacturer', item),
-                    get_key(MAPPING, 'part_number', item),
-                    get_key(OFFER_MAPPING, 'rating', offer),
-                    get_key(MAPPING, 'description', item),
-                    get_key(OFFER_MAPPING, 'amount', offer),
-                    get_key(OFFER_MAPPING, 'price', offer),
-                    get_key(OFFER_MAPPING, 'working_hours', offer),
-                    get_key(OFFER_MAPPING, 'delivery_duration', offer),
-                ]
-
-global LAST_CALL_TIME
-
-LAST_CALL_TIME = 0
-
-def handle(code, hint):
-    global LAST_CALL_TIME
-    
-    logger = logging.getLogger(__name__)
-    
-    logger.info('Processing %s %s', code, hint)
-    
-    # calculate time since last run
-    passed_time = time() - LAST_CALL_TIME
-    
-    if passed_time < 10:
-        delay = round(10 - passed_time)
-        logger.info('Sleeping for %s', delay)
-        # if not, sleep for some time
-        sleep(delay)
-    else:
-        logger.info('Making request asap')
-    
-    # after we've waited store the current time as last call time
-    LAST_CALL_TIME = time()
-    
-    response: Response = request('GET', SEARCH_URL.format(art=code, make=hint, lat=LAT, lng=LNG, locid=LOC_ID), headers=HEADERS)
-    
-    if response.status_code != 200:
-        logger.warning('Request to URL did not end up well')
-        logger.warning('URL: %s', response.url)
-        logger.warning('Code: %s', response.status_code)
+        session.headers.update({
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            # no clue what it does, but just in case
+            'Cache-Control': 'no-cache',
+            'DNT': '1',
+            'Pragma': 'no-cache',
+            'Origin': 'https://emex.ru',
+            'Referer': 'https://emex.ru',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77'
+        })
         
-        yield ''
-    else:
-        data = response.json()
+        session.cookies.set('Cookie', 'last-location=31448')
         
-        if data['errorMessage'] != '':
-            logger.error('Error searching for detail number: %s', code)
-            logger.error(data['errorMessage'])
+        self.session = session
+        self.authorized = False
+        self.logger = logging.getLogger(__name__)
+        self.LAST_REQUEST_TIME = 0
+        
+    def login(self, login, password):
+        # data = json.dumps({ 'login': login, 'password': password, 't': round(time() * 1000) })
+        
+        res : Response = self.session.post('https://emex.ru/api/account/login', json={ 'login': login, 'password': password, 't': round(time() * 1000) })
+        
+        self.LAST_REQUEST_TIME = time()
+        
+        if res.status_code == 200:
+            self.authorized = True
+        else:
+            self.logger.warning('Cannot login to emex')
+            self.logger.warning('Code: %s', res.status_code)
+            
+            try:
+                self.logger.warning(res.json())
+            except exceptions.JSONDecodeError:
+                pass
+            
+        return self.authorized
+            
+    def handle(self, code, hint):
+        logger = self.logger
+        
+        logger.info('Processing %s %s', code, hint)
+        
+        # calculate time since last run
+        passed_time = time() - self.LAST_REQUEST_TIME
+        
+        if passed_time < 10:
+            delay = round(10 - passed_time)
+            logger.info('Sleeping for %s', delay)
+            # if not, sleep for some time
+            sleep(delay)
+        else:
+            logger.info('Making request asap')
+        
+        # after we've waited store the current time as last call time
+        self.LAST_REQUEST_TIME = time()
+        
+        response: Response = self.session.get(SEARCH_URL.format(art=code, make=hint, lat=LAT, lng=LNG, locid=LOC_ID))
+        
+        if response.status_code != 200:
+            logger.warning('Request to URL did not end up well')
+            logger.warning('URL: %s', response.url)
+            logger.warning('Code: %s', response.status_code)
             
             yield ''
         else:
-            yield from get_data_from_json(data, code)
+            data = response.json()
+            
+            if data['errorMessage'] != '':
+                logger.error('Error searching for detail number: %s', code)
+                logger.error(data['errorMessage'])
+                
+                yield ''
+            else:
+                yield from self.get_data_from_json(data, code)
+
+    def get_data_from_json(self, data, code):
+        logger = self.logger
+        
+        originals = data['searchResult']['originals']
+        analogs = data['searchResult']['analogs']
+        replacements = data['searchResult']['replacements']
+            
+        logger.info('Originals: %s, Replacements: %s, Analogs: %s, Total: %s', len(originals), len(replacements), len(analogs), len(originals) + len(analogs))
+        
+        sources = [originals, replacements, analogs]
+        
+        for source in sources:
+            for item in source:
+                # code,id,manufacturer,part_number,rating,description,amount,price,working_hours,delivery_duration
+                for offer in item['offers']:
+                    yield [
+                        code,
+                        get_key(MAPPING, 'id', item),
+                        get_key(MAPPING, 'manufacturer', item),
+                        get_key(MAPPING, 'part_number', item),
+                        get_key(OFFER_MAPPING, 'rating', offer),
+                        get_key(MAPPING, 'description', item),
+                        get_key(OFFER_MAPPING, 'amount', offer),
+                        get_key(OFFER_MAPPING, 'price', offer),
+                        get_key(OFFER_MAPPING, 'working_hours', offer),
+                        get_key(OFFER_MAPPING, 'delivery_duration', offer),
+                    ]
 

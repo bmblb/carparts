@@ -57,7 +57,7 @@ def main(argv):
     loglevel = 'ERROR'
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='error', help='Set log level')
+    parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='info', help='Set log level')
     
     args = parser.parse_args()
     
