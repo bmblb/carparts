@@ -3,32 +3,87 @@ from logging.handlers import RotatingFileHandler
 import settings
 from parts_parser import parse_part
 
-def read(path):
-    logging.info('Processing %s', path)
+class CsvWriter:
+    def __init__(self) -> None:
+        self.logger = logging.getLogger('CSVWriter')
     
-    with open(os.path.join(settings.INPUT_DIR, path), newline='') as input:
-        reader = csv.reader(input)
+    def start(self, filename):
+        file = open(os.path.join(settings.OUTPUT_DIR, filename.replace('.csv', '_output.csv')), 'w')
         
-        with open(os.path.join(settings.OUTPUT_DIR, path.replace('.csv', '_output.csv')), 'w') as out:
-            logging.info('Writing output to %s', out.name)
+        self.logger.info('Writing output to %s', file.name)
+        
+        self.writer = csv.writer(file)
+        self.file = file
+        
+    def finish(self):
+        if self.file:
+            self.file.close()
             
-            writer = csv.writer(out)
+    def writeline(self, line):
+        self.writer.writerow(line)
+
+WRITERS = {
+    'csv': CsvWriter
+}        
+
+class Scraper:
+    writers = []
+    
+    def __init__(self, writers = ''):
+        self.logger = logging.getLogger('Scraper')
+        
+        for name in writers.split(','):
+            if name in WRITERS:
+                self.writers.append(WRITERS[name]())
+                self.logger.info('Created %s writer', name)
+            else:
+                self.logger.info('%s writer is not declared', name)
+    
+    def read(self, path):
+        logger = self.logger
+        
+        if len(self.writers) == 0:
+            logger.warning('No writers registered, quitting')
+            return
+        
+        logger.info('Processing %s', path)
+        
+        # iterate the writing pipeline objects and let them know we're reading new file
+        for writer in self.writers:
+            writer.start(path)
+    
+        with open(os.path.join(settings.INPUT_DIR, path), newline='') as input:
+            reader = csv.reader(input)
             
             # write header
-            writer.writerow(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
+            self.write(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
             
             for line in reader:
-                logging.info('Processing part {} {}'.format(*line))
+                logger.info('Processing part {} {}'.format(*line))
                 
                 for l in parse_part(*line):
-                    writer.writerow(l)
+                    self.write(l)
+                    
+        # iterate the writing pipeline objects and let them know file is processed
+        for writer in self.writers:
+            writer.finish()
+    
+    def write(self, line):
+        for writer in self.writers:
+            writer.writeline(line)
+            
+    def run(self):
+        self.logger.info('Parser started')
+        
+        for file in os.listdir(settings.INPUT_DIR):
+            if file[-3:] == 'csv':
+                self.read(file)
 
 
-def start():
-    logging.info('Parser started')
-    for file in os.listdir(settings.INPUT_DIR):
-        if file[-3:] == 'csv':
-            read(file)
+def start(output):
+    scraper = Scraper(writers=output)
+
+    scraper.run()
 
 
 def setup_logging(loglevel):
@@ -58,14 +113,15 @@ def main(argv):
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='info', help='Set log level')
+    parser.add_argument('--output', dest='output', default='csv', help='Comma-separated list of writers')
     
     args = parser.parse_args()
     
     loglevel = args.loglevel
-
+    
     setup_logging(loglevel)
     
-    start()
+    start(args.output)
     # try:
     #     start()
     # except BaseException as e:
