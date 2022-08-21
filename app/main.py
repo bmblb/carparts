@@ -2,28 +2,12 @@ import csv, os, logging, sys, argparse
 from logging.handlers import RotatingFileHandler
 import settings
 from parts_parser import parse_part
-
-class CsvWriter:
-    def __init__(self) -> None:
-        self.logger = logging.getLogger('CSVWriter')
-    
-    def start(self, filename):
-        file = open(os.path.join(settings.OUTPUT_DIR, filename.replace('.csv', '_output.csv')), 'w')
+from writers.CsvWriter import CsvWriter
+from writers.XlsxWriter import XlsxWriter
         
-        self.logger.info('Writing output to %s', file.name)
-        
-        self.writer = csv.writer(file)
-        self.file = file
-        
-    def finish(self):
-        if self.file:
-            self.file.close()
-            
-    def writeline(self, line):
-        self.writer.writerow(line)
-
 WRITERS = {
-    'csv': CsvWriter
+    'csv': CsvWriter,
+    'xlsx': XlsxWriter
 }        
 
 class Scraper:
@@ -78,6 +62,8 @@ class Scraper:
         for file in os.listdir(settings.INPUT_DIR):
             if file[-3:] == 'csv':
                 self.read(file)
+                
+        self.logger.info('Parser finished')
 
 
 def start(output):

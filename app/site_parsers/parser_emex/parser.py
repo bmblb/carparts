@@ -166,8 +166,8 @@ class Emex():
         # calculate time since last run
         passed_time = time() - self.LAST_REQUEST_TIME
         
-        if passed_time < 10:
-            delay = round(10 - passed_time)
+        if passed_time < 60:
+            delay = round(60 - passed_time)
             logger.info('Sleeping for %s', delay)
             # if not, sleep for some time
             sleep(delay)
