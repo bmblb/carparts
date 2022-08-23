@@ -15,12 +15,16 @@ def get_parser(config):
     if name in parsers:
         parser = parsers[name]()
         parser.init()
-        logged = parser.login(config['LOGIN'], config['PASSWORD'])
         
-        if logged:
-            return parser
+        if 'LOGIN' in config:
+            logged = parser.login(config['LOGIN'], config['PASSWORD'])
+        
+            if logged:
+                return parser
+            else:
+                logging.warn('Cannot login parser: %s', name)
         else:
-            logging.warn('Cannot login parser: %s', name)
+            return parser
     else:
         logging.warning('Cannot find parser: %s', name)
         

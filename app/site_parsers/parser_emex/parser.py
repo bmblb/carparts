@@ -64,7 +64,9 @@ Offer:
 
 LAT = 37.430390
 LNG = 55.888740
-LOC_ID = 31448
+# Москва, ПВЗ на Ленинградской 16Б в Химках
+# Судя по всему работает только для анонимного пользователя, пункт выдачи привязан к аккаунту
+LOC_ID = 30073
 SEARCH_URL = 'https://emex.ru/api/search/search?detailNum={art}&make={make}&locationId={locid}&showAll=true&longitude={lng}&latitude={lat}'
 
 MAPPING = {
@@ -131,7 +133,7 @@ class Emex():
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77'
         })
         
-        session.cookies.set('Cookie', 'last-location=31448')
+        session.cookies.set('Cookie', 'last-location={}'.format(LOC_ID))
         
         self.session = session
         self.authorized = False
@@ -199,13 +201,18 @@ class Emex():
     def get_data_from_json(self, data, code):
         logger = self.logger
         
-        originals = data['searchResult']['originals']
-        analogs = data['searchResult']['analogs']
-        replacements = data['searchResult']['replacements']
-            
-        logger.info('Originals: %s, Replacements: %s, Analogs: %s, Total: %s', len(originals), len(replacements), len(analogs), len(originals) + len(analogs))
+        if 'location' in data:
+            logger.info('Location: %s', json.dumps(data['location']))
         
-        sources = [originals, replacements, analogs]
+        result = data['searchResult']
+        
+        sources = []
+        
+        for key in ['originals', 'replacements', 'analogs']:
+            if key in result:
+                source = data['searchResult']['originals']
+                logger.info('%s: %s', key, len(source))
+                sources.append(source)
         
         for source in sources:
             for item in source:

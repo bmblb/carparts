@@ -98,8 +98,8 @@ def main(argv):
     loglevel = 'ERROR'
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='info', help='Set log level')
-    parser.add_argument('--output', dest='output', default='csv', help='Comma-separated list of writers')
+    parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='warning', help='Set log level')
+    parser.add_argument('--output', dest='output', default='csv', help='Comma-separated list of writers (csv and xlsx supported)')
     
     args = parser.parse_args()
     
@@ -107,11 +107,10 @@ def main(argv):
     
     setup_logging(loglevel)
     
-    start(args.output)
-    # try:
-    #     start()
-    # except BaseException as e:
-    #     logging.critical(e)
+    try:
+        start(args.output)
+    except BaseException as e:
+        logging.critical(e)
 
 
 if __name__ == '__main__':

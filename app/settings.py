@@ -15,9 +15,11 @@ SOURCE_EXIST = {
 
 SOURCE_EMEX = {
     'SEARCH_URL': 'https://emex.ru/products/{part_code}',
-    'PARSER': 'emex',
-    'LOGIN': settings_local.EMEX_LOGIN,
-    'PASSWORD': settings_local.EMEX_PASSWORD
+    'PARSER': 'emex'
 }
+
+if 'LOGIN' in dir(settings_local):
+    SOURCE_EMEX['LOGIN'] = settings_local.EMEX_LOGIN
+    SOURCE_EMEX['PASSWORD'] = settings_local.EMEX_PASSWORD
 
 SOURCES = [SOURCE_EMEX]
