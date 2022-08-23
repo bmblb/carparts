@@ -164,6 +164,7 @@ class Emex():
         logger = self.logger
         
         logger.info('Processing %s %s', code, hint)
+        print('EMEX: Processing detail {} {}'.format(code, hint))
         
         # calculate time since last run
         passed_time = time() - self.LAST_REQUEST_TIME
@@ -171,6 +172,7 @@ class Emex():
         if passed_time < 60:
             delay = round(60 - passed_time)
             logger.info('Sleeping for %s', delay)
+            print('EMEX: Sleep for {} sec'.format(delay))
             # if not, sleep for some time
             sleep(delay)
         else:
@@ -201,16 +203,16 @@ class Emex():
     def get_data_from_json(self, data, code):
         logger = self.logger
         
-        if 'location' in data:
-            logger.info('Location: %s', json.dumps(data['location']))
-        
         result = data['searchResult']
+        
+        if 'location' in result:
+            logger.info('Location: %s', json.dumps(result['location']))
         
         sources = []
         
         for key in ['originals', 'replacements', 'analogs']:
             if key in result:
-                source = data['searchResult']['originals']
+                source = result['originals']
                 logger.info('%s: %s', key, len(source))
                 sources.append(source)
         

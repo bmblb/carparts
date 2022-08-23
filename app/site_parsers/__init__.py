@@ -7,14 +7,20 @@ parsers = {
     'emex': Emex
 }
 
+initialized = {}
+
 def get_parser(config):
     name = config['PARSER']
     
     parser = parsers[name]
     
-    if name in parsers:
+    if name in initialized:
+        return initialized[name]
+    elif name in parsers:
         parser = parsers[name]()
         parser.init()
+        
+        initialized[name] = parser
         
         if 'LOGIN' in config:
             logged = parser.login(config['LOGIN'], config['PASSWORD'])

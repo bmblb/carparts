@@ -110,7 +110,7 @@ def main(argv):
     try:
         start(args.output)
     except BaseException as e:
-        logging.critical(e)
+        logging.exception(e)
 
 
 if __name__ == '__main__':
