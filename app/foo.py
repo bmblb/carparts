@@ -1,7 +1,8 @@
-import csv, json, re
+import csv, json, re, sys
 from bs4 import BeautifulSoup
 import xlsxwriter
 from writers.XlsxWriter import XlsxWriter
+from time import sleep
 
 def check_content():
     with open('tmp.html') as file:
@@ -55,12 +56,71 @@ def writer_test():
     writer.writeline(['100', '1', 'toyota', '123', 4.3, 'foo', 50, 1900.15, '10-12', '3 days'])
     
     writer.finish()
+    
+def console_test():
+    global progress_x
+    
+    def start_progress(title):
+        global progress_x
+        sys.stdout.write(title + ": [" + "-"*40 + "]" + chr(8)*41)
+        sys.stdout.flush()
+        progress_x = 0
+
+    def progress(x):
+        global progress_x
+        x = int(x * 40 // 100)
+        sys.stdout.write("#" * (x - progress_x))
+        sys.stdout.flush()
+        progress_x = x
+
+    def end_progress():
+        sys.stdout.write("#" * (40 - progress_x) + "]\n")
+        sys.stdout.flush()
+        
+    start_progress('Test')
+    
+    for i in range(100):
+        progress(i)
+        sleep(.02)
+        
+    end_progress()
+
+def console_test1():
+    def print_percent_done(index, total, bar_len=50, title='Please wait'):
+        '''
+        index is expected to be 0 based index. 
+        0 <= index < total
+        '''
+        percent_done = (index+1)/total*100
+        percent_done = round(percent_done, 1)
+
+        done = round(percent_done/(100/bar_len))
+        togo = bar_len-done
+
+        done_str = '█'*int(done)
+        togo_str = '░'*int(togo)
+        
+        print(' ' * 80, end='\r')
+
+        print(f'{title}: [{done_str}{togo_str}] {percent_done}% done', end='\r')
+
+        if round(percent_done) == 100:
+            print(' ' * 80, flush=True)
+
+
+    r = 50
+    for i in range(r):
+        print_percent_done(i,r)
+        sleep(.02)
 
 def main():
     # exist_test()
     # emex_test()
     # xls_test()
-    writer_test()
+    # writer_test()
+    # console_test()
+    console_test1()
+    
 
 if __name__ == '__main__':
     main()

@@ -115,7 +115,9 @@ def get_key(map, key, target):
 class Emex():
     name = 'Emex'
     
-    def init(self):
+    def __init__(self, delay=60):
+        self.delay = delay
+        
         session = Session()
         
         session.headers.update({
@@ -164,15 +166,15 @@ class Emex():
         logger = self.logger
         
         logger.info('Processing %s %s', code, hint)
-        print('EMEX: Processing detail {} {}'.format(code, hint))
+        # print('EMEX: Processing detail {} {}'.format(code, hint))
         
         # calculate time since last run
         passed_time = time() - self.LAST_REQUEST_TIME
         
-        if passed_time < 60:
-            delay = round(60 - passed_time)
+        if passed_time < self.delay:
+            delay = round(self.delay - passed_time)
             logger.info('Sleeping for %s', delay)
-            print('EMEX: Sleep for {} sec'.format(delay))
+            # print('EMEX: Sleep for {} sec'.format(delay))
             # if not, sleep for some time
             sleep(delay)
         else:
@@ -206,7 +208,12 @@ class Emex():
         result = data['searchResult']
         
         if 'location' in result:
-            logger.info('Location: %s', json.dumps(result['location']))
+            location = result['location']
+            
+            if 'locationId' in location and 'address' in location:
+                logger.info('Location id: %s, address: %s', location['locationId'], location['address'])
+            else:
+                logger.info('Location: %s', json.dumps(location))
         
         sources = []
         

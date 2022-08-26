@@ -2,19 +2,19 @@ import logging
 import site_parsers
 import settings
 
-def init_parsers():
+def init_parsers(delay):
     parsers = []
     
     for source in settings.SOURCES:
-        parser = site_parsers.get_parser(source)
+        parser = site_parsers.get_parser(source, delay)
         
         if parser != None:
             parsers.append(parser)
             
     return parsers
 
-def parse_part(code, hint):
-    parsers = init_parsers()
+def parse_part(code, hint, delay):
+    parsers = init_parsers(delay)
     
     if len(parsers) == 0:
         logging.info('Could not initialize any parsers')

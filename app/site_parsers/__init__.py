@@ -9,7 +9,7 @@ parsers = {
 
 initialized = {}
 
-def get_parser(config):
+def get_parser(config, delay):
     name = config['PARSER']
     
     parser = parsers[name]
@@ -17,8 +17,7 @@ def get_parser(config):
     if name in initialized:
         return initialized[name]
     elif name in parsers:
-        parser = parsers[name]()
-        parser.init()
+        parser = parsers[name](delay=delay)
         
         initialized[name] = parser
         
