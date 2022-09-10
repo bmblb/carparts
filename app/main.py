@@ -62,34 +62,41 @@ class Scraper:
         filename = os.path.join(settings.INPUT_DIR, path)
         
         lines = sum(1 for _ in open(filename)) + 1
-    
-        with open(filename, newline='') as input:
-            reader = csv.reader(input)
-            
-            # write header
-            self.write(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
-            
-            i = 0
-            
-            for line in reader:
-                if i == 0:
-                    print_percent_done(0, lines, title='{} {}'.format(*line))
+        
+        try:
+            with open(filename, newline='') as input:
+                reader = csv.reader(input)
                 
-                logger.info('Processing part {} {}'.format(*line))
+                # write header
+                self.write(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
                 
-                i = i + 1
+                i = 0
                 
-                for l in parse_part(*line, self.delay):
-                    self.write(l)
+                for line in reader:
+                    if i == 0:
+                        print_percent_done(0, lines, title='{} {}'.format(*line))
                     
-                print_percent_done(i, lines, title='{} {}'.format(*line))
+                    logger.info('Processing part {} {}'.format(*line))
                     
-        # iterate the writing pipeline objects and let them know file is processed
-        for writer in self.writers:
-            writer.finish()
-            
-        print_percent_done(100, 100, title='Done')
-        print('')
+                    i = i + 1
+                    
+                    for l in parse_part(*line, self.delay):
+                        self.write(l)
+                        
+                    print_percent_done(i, lines, title='{} {}'.format(*line))
+                    
+        except Exception as e:
+            for writer in self.writers:
+                writer.finish()
+            raise e
+
+        finally:                    
+            # iterate the writing pipeline objects and let them know file is processed
+            for writer in self.writers:
+                writer.finish()
+                
+            print_percent_done(100, 100, title='Done')
+            print('')
     
     def write(self, line):
         for writer in self.writers:
@@ -134,7 +141,7 @@ def setup_logging(loglevel):
     )
 
 
-def main(argv):
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='warning', help='Set log level')
     parser.add_argument('--output', dest='output', default='csv', help='Comma-separated list of writers (csv and xlsx supported)')
@@ -151,4 +158,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

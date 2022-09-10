@@ -22,7 +22,7 @@ def get_parser(config, delay):
         initialized[name] = parser
         
         if 'LOGIN' in config:
-            logged = parser.login(config['LOGIN'], config['PASSWORD'])
+            logged = parser.login(config.get('LOGIN', ''), config.get('PASSWORD', ''))
         
             if logged:
                 return parser

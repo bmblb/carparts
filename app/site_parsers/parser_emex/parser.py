@@ -104,11 +104,7 @@ def get_key(map, key, target):
     # otherwise split key into chunks and dive into dictionary looking for value
     else:
         for part in prop.split('.'):
-            if part in target:
-                target = target[part]
-            # if key is not in target use empty string for value
-            else:
-                target = ''
+            target = target.get(part, '')
     
     return accessor(target)
 
@@ -183,6 +179,8 @@ class Emex():
         # after we've waited store the current time as last call time
         self.LAST_REQUEST_TIME = time()
         
+        logger.info('Requesting detail info')
+        
         response: Response = self.session.get(SEARCH_URL.format(art=code, make=hint, lat=LAT, lng=LNG, locid=LOC_ID))
         
         if response.status_code != 200:
@@ -192,11 +190,15 @@ class Emex():
             
             yield ''
         else:
+            logger.warning(f'Reponse error: {response.status_code}')
+            
             data = response.json()
             
-            if data['errorMessage'] != '':
+            errorMessage = data.get('errorMessage')
+            
+            if errorMessage:
                 logger.error('Error searching for detail number: %s', code)
-                logger.error(data['errorMessage'])
+                logger.error(errorMessage)
                 
                 yield ''
             else:
@@ -205,28 +207,29 @@ class Emex():
     def get_data_from_json(self, data, code):
         logger = self.logger
         
-        result = data['searchResult']
+        result = data.get('searchResult')
         
-        if 'location' in result:
-            location = result['location']
-            
-            if 'locationId' in location and 'address' in location:
-                logger.info('Location id: %s, address: %s', location['locationId'], location['address'])
+        location = result.get('location', '')
+        
+        if location:
+            if 'locationId' in location:
+                logger.info('Location id: %s, address: %s', location.get('locationId'), location.get('address', ''))
             else:
                 logger.info('Location: %s', json.dumps(location))
         
         sources = []
         
         for key in ['originals', 'replacements', 'analogs']:
-            if key in result:
-                source = result['originals']
+            source = result.get(key, None)
+        
+            if source:
                 logger.info('%s: %s', key, len(source))
                 sources.append(source)
         
         for source in sources:
             for item in source:
                 # code,id,manufacturer,part_number,rating,description,amount,price,working_hours,delivery_duration
-                for offer in item['offers']:
+                for offer in item.get('offers'):
                     yield [
                         code,
                         get_key(MAPPING, 'id', item),
@@ -234,7 +237,9 @@ class Emex():
                         get_key(MAPPING, 'part_number', item),
                         get_key(OFFER_MAPPING, 'rating', offer),
                         get_key(MAPPING, 'description', item),
-                        get_key(OFFER_MAPPING, 'amount', offer),
+                        # if quantity is 1000 and `isCustom` is true, emex shows `Под заказ`
+                        'Под заказ' if offer.get('isCustom', '') and offer.get('quantity') == 1000 else offer.get('quantity'),
+                        # get_key(OFFER_MAPPING, 'amount', offer),
                         get_key(OFFER_MAPPING, 'price', offer),
                         get_key(OFFER_MAPPING, 'working_hours', offer),
                         get_key(OFFER_MAPPING, 'delivery_duration', offer),
