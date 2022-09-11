@@ -35,9 +35,14 @@ def print_percent_done(index, total, bar_len=50, title='Please wait'):
 class Scraper:
     writers = []
     
-    def __init__(self, writers = '', delay = 60):
-        self.logger = logging.getLogger('Scraper')
+    def __init__(self, writers='', delay=60, limit=None):
+        logger = self.logger = logging.getLogger('Scraper')
         self.delay = delay
+        self.limit = limit
+        
+        logger.info(f'Scraper config: writers={writers}')
+        logger.info(f'Scraper config: delay={delay}')
+        logger.info(f'Scraper config: limit={limit}')
         
         for name in writers.split(','):
             if name in WRITERS:
@@ -70,15 +75,13 @@ class Scraper:
                 # write header
                 self.write(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
                 
-                i = 0
-                
-                for line in reader:
+                for i, line in enumerate(reader):
                     if i == 0:
                         print_percent_done(0, lines, title='{} {}'.format(*line))
+                    elif self.limit and i > self.limit:
+                        break
                     
                     logger.info('Processing part {} {}'.format(*line))
-                    
-                    i = i + 1
                     
                     for l in parse_part(*line, self.delay):
                         self.write(l)
@@ -112,8 +115,8 @@ class Scraper:
         self.logger.info('Parser finished')
 
 
-def start(output, delay):
-    scraper = Scraper(writers=output, delay=delay)
+def start(output, delay, limit):
+    scraper = Scraper(output, delay, limit)
 
     scraper.run()
 
@@ -146,16 +149,17 @@ def main():
     parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='warning', help='Set log level')
     parser.add_argument('--output', dest='output', default='csv', help='Comma-separated list of writers (csv and xlsx supported)')
     parser.add_argument('--delay', dest='delay', type=int, default=60, help='Delay in seconds between requests')
+    parser.add_argument('--limit', dest='limit', type=int, default=None, help='Limit amount of parsed items')
     
     args = parser.parse_args()
     
     setup_logging(args.loglevel)
     
     try:
-        start(args.output, args.delay)
+        start(args.output, args.delay, args.limit)
     except BaseException as e:
         logging.exception(e)
-
+        exit(1)
 
 if __name__ == '__main__':
     main()

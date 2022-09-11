@@ -173,8 +173,6 @@ class Emex():
             # print('EMEX: Sleep for {} sec'.format(delay))
             # if not, sleep for some time
             sleep(delay)
-        else:
-            logger.info('Making request asap')
         
         # after we've waited store the current time as last call time
         self.LAST_REQUEST_TIME = time()
@@ -190,8 +188,6 @@ class Emex():
             
             yield ''
         else:
-            logger.warning(f'Reponse error: {response.status_code}')
-            
             data = response.json()
             
             errorMessage = data.get('errorMessage')
