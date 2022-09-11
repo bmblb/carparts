@@ -69,7 +69,7 @@ class Scraper:
         lines = min(sum(1 for _ in open(filename)) + 1, self.limit)
         
         try:
-            with open(filename, newline='') as input:
+            with open(filename, newline='', encoding='utf-8') as input:
                 reader = csv.reader(input)
                 
                 # write header

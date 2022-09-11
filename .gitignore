@@ -1,5 +1,6 @@
 .vscode
 venv
+venv_win
 __pycache__
 output/*
 log/*

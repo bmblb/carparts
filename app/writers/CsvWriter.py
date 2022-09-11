@@ -6,7 +6,7 @@ class CsvWriter:
         self.logger = logging.getLogger('CSVWriter')
     
     def start(self, filename):
-        file = open(os.path.join(settings.OUTPUT_DIR, filename.replace('.csv', '_output.csv')), 'w')
+        file = open(os.path.join(settings.OUTPUT_DIR, filename.replace('.csv', '_output.csv')), 'w', encoding='utf-8', newline='')
         
         self.logger.info('Writing output to %s', file.name)
         
