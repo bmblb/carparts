@@ -69,6 +69,10 @@ LNG = 55.888740
 LOC_ID = 30073
 SEARCH_URL = 'https://emex.ru/api/search/search?detailNum={art}&make={make}&locationId={locid}&showAll=true&longitude={lng}&latitude={lat}'
 
+# Производитель для каждой детали может отличаться. Например для одной Kashiyama, а для другой KASHIYAMA. Поэтому нужно понять как именно
+# производитель зарегистрирован у емекса
+MAKER_URL = 'https://emex.ru/products/{art}'
+
 MAPPING = {
     'id': 'detailKey',
     'manufacturer': 'make',
@@ -138,6 +142,20 @@ class Emex():
         self.logger = logging.getLogger(__name__)
         self.LAST_REQUEST_TIME = 0
         
+    def ensure_request_timeout(self):
+        # calculate time since last run
+        passed_time = time() - self.LAST_REQUEST_TIME
+        
+        if passed_time < self.delay:
+            delay = round(self.delay - passed_time)
+            self.logger.info('Sleeping for %s', delay)
+            # print('EMEX: Sleep for {} sec'.format(delay))
+            # if not, sleep for some time
+            sleep(delay)
+        
+        # after we've waited store the current time as last call time
+        self.LAST_REQUEST_TIME = time()
+        
     def login(self, login, password):
         # data = json.dumps({ 'login': login, 'password': password, 't': round(time() * 1000) })
         
@@ -157,6 +175,32 @@ class Emex():
                 pass
             
         return self.authorized
+    
+    def get_manufacturer(self, code, hint) -> str:
+        self.ensure_request_timeout()
+        
+        pattern = re.compile(hint, re.I)
+        
+        def find_maker(tag):
+            return tag.name == 'a' and tag.findChild(string=pattern)
+        
+        response: Response = self.session.get(MAKER_URL.format(art=code))
+        
+        soup = BeautifulSoup(response.text, features='html.parser')
+        
+        links = soup.find_all(find_maker)
+        
+        if len(links) > 1:
+            self.logger.warning(f'More than one manufacturer with the same name found for detail {code}')
+        elif len(links) == 0:
+            self.logger.error(f'Cannot find maker for the detail {code}')
+            return hint
+        
+        try:
+            return links[0].select('div > div')[0].text
+        except BaseException as e:
+            # fallback to hint if we couldn't find the real maker
+            return hint
             
     def handle(self, code, hint):
         logger = self.logger
@@ -164,18 +208,9 @@ class Emex():
         logger.info('Processing %s %s', code, hint)
         # print('EMEX: Processing detail {} {}'.format(code, hint))
         
-        # calculate time since last run
-        passed_time = time() - self.LAST_REQUEST_TIME
+        hint = self.get_manufacturer(code, hint)
         
-        if passed_time < self.delay:
-            delay = round(self.delay - passed_time)
-            logger.info('Sleeping for %s', delay)
-            # print('EMEX: Sleep for {} sec'.format(delay))
-            # if not, sleep for some time
-            sleep(delay)
-        
-        # after we've waited store the current time as last call time
-        self.LAST_REQUEST_TIME = time()
+        self.ensure_request_timeout()
         
         logger.info('Requesting detail info')
         
@@ -221,6 +256,9 @@ class Emex():
             if source:
                 logger.info('%s: %s', key, len(source))
                 sources.append(source)
+                
+        if len(sources) == 0:
+            logger.warning(f'No items found for {code}! Check manufacturer name')
         
         for source in sources:
             for item in source:

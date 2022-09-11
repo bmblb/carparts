@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import xlsxwriter
 from writers.XlsxWriter import XlsxWriter
 from time import sleep
+import requests
 
 def check_content():
     with open('tmp.html') as file:
@@ -112,6 +113,22 @@ def console_test1():
     for i in range(r):
         print_percent_done(i,r)
         sleep(.02)
+        
+def emex_find_maker():
+    pattern = re.compile('kashiyama', re.I)
+    
+    def find_makers(tag):
+        return tag.name == 'a' and tag.findChild(string=pattern)
+    
+    response = requests.get('https://emex.ru/products/K2342')
+    soup = BeautifulSoup(response.text)
+    result = soup.find_all(find_makers)
+    print(result)
+    
+    result = result[0].findChild(string=pattern)
+    print(type(result))
+    print(result)
+    # print([pattern.search(r) for item in result for r in item.findChild(string=pattern)])
 
 def main():
     # exist_test()
@@ -119,7 +136,8 @@ def main():
     # xls_test()
     # writer_test()
     # console_test()
-    console_test1()
+    # console_test1()
+    emex_find_maker()
     
 
 if __name__ == '__main__':
