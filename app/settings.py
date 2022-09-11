@@ -1,8 +1,8 @@
-import settings_local
+import settings_local, os
 
 # Path to in/out dirs relative to the main.py
-INPUT_DIR = '../input'
-OUTPUT_DIR = '../output'
+INPUT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', 'input'))
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', 'output'))
 
 # Timeout between requests in milliseconds
 REQUEST_TIMEOUT = 60000

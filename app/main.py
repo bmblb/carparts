@@ -129,7 +129,7 @@ def setup_logging(loglevel):
         sys.exit(1)
 
     rotateHandler = RotatingFileHandler(
-        filename='../log/parser.log',
+        filename=os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', 'log', 'parser.log')),
         # 10 MB
         maxBytes=1024 * 1024 * 10,
         backupCount=3,
