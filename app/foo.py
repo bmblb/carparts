@@ -115,15 +115,16 @@ def console_test1():
         sleep(.02)
         
 def emex_find_maker():
-    pattern = re.compile('kashiyama', re.I)
+    pattern = re.compile('555', re.I)
     
     def find_makers(tag):
         return tag.name == 'a' and tag.findChild(string=pattern)
     
-    response = requests.get('https://emex.ru/products/K2342')
+    response = requests.get('https://emex.ru/products/SB6642')
     soup = BeautifulSoup(response.text)
     result = soup.find_all(find_makers)
     print(result)
+    print(len(result))
     
     result = result[0].findChild(string=pattern)
     print(type(result))

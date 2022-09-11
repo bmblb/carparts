@@ -182,9 +182,16 @@ class Emex():
         pattern = re.compile(hint, re.I)
         
         def find_maker(tag):
-            return tag.name == 'a' and tag.findChild(string=pattern)
+            child =tag.select_one('div > div') if tag.name == 'a' else None
+            return child and pattern.search(child.text)
         
         response: Response = self.session.get(MAKER_URL.format(art=code))
+        
+        # If there was a redirect pick last part of the URL
+        if len(response.history) > 0:
+            result = response.url.split('/')[-1]
+            self.logger.info(f'Only one manufaturer found for the detail {code}: {result}')
+            return result
         
         soup = BeautifulSoup(response.text, features='html.parser')
         
@@ -197,8 +204,11 @@ class Emex():
             return hint
         
         try:
-            return links[0].select('div > div')[0].text
+            result = links[0].select_one('div > div').text
+            self.logger.info(f'Detail: {code}, Manufaturer: {result} (suggested {result})')
+            return result
         except BaseException as e:
+            self.logger.info(f'There was a problem extracting manufacturer, using suggested value: {hint}')
             # fallback to hint if we couldn't find the real maker
             return hint
             

@@ -66,7 +66,7 @@ class Scraper:
             
         filename = os.path.join(settings.INPUT_DIR, path)
         
-        lines = sum(1 for _ in open(filename)) + 1
+        lines = min(sum(1 for _ in open(filename)) + 1, self.limit)
         
         try:
             with open(filename, newline='') as input:
