@@ -73,7 +73,7 @@ class Scraper:
                 reader = csv.reader(input)
                 
                 # write header
-                self.write(['code', 'id', 'manufacturer', 'part_number', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
+                self.write(['code', 'id', 'manufacturer', 'part_number', 'supplier', 'rating', 'description', 'amount', 'price', 'working_hours', 'delivery_duration'])
                 
                 for i, line in enumerate(reader):
                     if i == 0:

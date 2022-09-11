@@ -81,6 +81,7 @@ MAPPING = {
 }
 
 OFFER_MAPPING = {
+    'supplier': 'rating2.code',
     'rating': 'rating2.value',
     'amount': 'quantity',
     'price': 'displayPrice.value',
@@ -279,6 +280,7 @@ class Emex():
                         get_key(MAPPING, 'id', item),
                         get_key(MAPPING, 'manufacturer', item),
                         get_key(MAPPING, 'part_number', item),
+                        get_key(OFFER_MAPPING, 'supplier', offer),
                         get_key(OFFER_MAPPING, 'rating', offer),
                         get_key(MAPPING, 'description', item),
                         # if quantity is 1000 and `isCustom` is true, emex shows `Под заказ`
