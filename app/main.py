@@ -66,7 +66,13 @@ class Scraper:
             
         filename = os.path.join(settings.INPUT_DIR, path)
         
-        lines = min(sum(1 for _ in open(filename)) + 1, self.limit)
+        lines = 0
+        
+        with open(filename, 'r', newline='', encoding='utf-8') as f:
+            lines = sum(1 for _ in f)
+        
+        # -1 for limit means no limit
+        lines = lines if self.limit == -1 else min(lines, self.limit)
         
         try:
             with open(filename, newline='', encoding='utf-8') as input:
@@ -149,7 +155,7 @@ def main():
     parser.add_argument('--loglevel', dest='loglevel', choices=('info', 'warning', 'error'), default='warning', help='Set log level')
     parser.add_argument('--output', dest='output', default='csv', help='Comma-separated list of writers (csv and xlsx supported)')
     parser.add_argument('--delay', dest='delay', type=int, default=60, help='Delay in seconds between requests')
-    parser.add_argument('--limit', dest='limit', type=int, default=None, help='Limit amount of parsed items')
+    parser.add_argument('--limit', dest='limit', type=int, default=-1, help='Limit amount of parsed items. -1 - no limit')
     
     args = parser.parse_args()
     

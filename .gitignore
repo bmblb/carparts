@@ -1,4 +1,6 @@
 .vscode
+build
+dist
 venv
 venv_win
 __pycache__
