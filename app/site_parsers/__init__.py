@@ -10,7 +10,7 @@ parsers = {
 initialized = {}
 
 def get_parser(config, delay):
-    name = config['PARSER']
+    name = config.get('name')
     
     parser = parsers[name]
     
@@ -21,15 +21,7 @@ def get_parser(config, delay):
         
         initialized[name] = parser
         
-        if 'LOGIN' in config:
-            logged = parser.login(config.get('LOGIN', ''), config.get('PASSWORD', ''))
-        
-            if logged:
-                return parser
-            else:
-                logging.warn('Cannot login parser: %s', name)
-        else:
-            return parser
+        return parser if parser.login(config.get('login', ''), config.get('password', '')) else None
     else:
         logging.warning('Cannot find parser: %s', name)
         

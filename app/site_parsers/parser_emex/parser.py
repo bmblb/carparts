@@ -158,17 +158,20 @@ class Emex():
         self.LAST_REQUEST_TIME = time()
         
     def login(self, login, password):
-        # data = json.dumps({ 'login': login, 'password': password, 't': round(time() * 1000) })
+        if not login or not password:
+            self.logger.warning('Login or password is empty, skip login')
+            return True
+            
+        self.ensure_request_timeout()
         
         res : Response = self.session.post('https://emex.ru/api/account/login', json={ 'login': login, 'password': password, 't': round(time() * 1000) })
         
-        self.LAST_REQUEST_TIME = time()
-        
         if res.status_code == 200:
             self.authorized = True
+            self.logger.info(f'Logged in as {login}')
         else:
             self.logger.warning('Cannot login to emex')
-            self.logger.warning('Code: %s', res.status_code)
+            self.logger.warning(f'Code: {res.status_code}')
             
             try:
                 self.logger.warning(res.json())
@@ -178,13 +181,13 @@ class Emex():
         return self.authorized
     
     def get_manufacturer(self, code, hint) -> str:
-        self.ensure_request_timeout()
-        
         pattern = re.compile(hint, re.I)
         
         def find_maker(tag):
-            child =tag.select_one('div > div') if tag.name == 'a' else None
+            child = tag.select_one('div > div') if tag.name == 'a' else None
             return child and pattern.search(child.text)
+        
+        self.ensure_request_timeout()
         
         response: Response = self.session.get(MAKER_URL.format(art=code))
         

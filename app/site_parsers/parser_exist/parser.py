@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import json
-from settings import SOURCE_EXIST
 
 url = "https://exist.ru/Price/Default.aspx/GetQuery"
 
@@ -87,7 +86,7 @@ ITEM_MAPPING = {
 }
 
 def get_search_url(source, part_code):
-    return source['SEARCH_URL'].format(part_code = part_code)
+    return source['search_url'].format(part_code = part_code)
 
 
 def get_page(url):
@@ -170,7 +169,7 @@ def process_page(url, hint):
 def handle(code, hint):
     print('exist')
     
-    url = get_search_url(SOURCE_EXIST, code)
+    # url = get_search_url(SOURCE_EXIST, code)
         
-    return process_page(url, hint)
+    # return process_page(url, hint)
         
