@@ -4,10 +4,9 @@
 block_cipher = None
 
 data_files = [
-    ('app.config.json', '.'),
+    ('app.ini', '.'),
     ('README.md', '.'),
     ('input', 'input'),
-    #('log', 'log'),
     ('output', 'output')
 ]
 
