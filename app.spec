@@ -7,7 +7,7 @@ data_files = [
     ('app.config.json', '.'),
     ('README.md', '.'),
     ('input', 'input'),
-    ('log', 'log'),
+    #('log', 'log'),
     ('output', 'output')
 ]
 

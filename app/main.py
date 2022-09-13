@@ -84,7 +84,7 @@ class Scraper:
                 for i, line in enumerate(reader):
                     if i == 0:
                         print_percent_done(0, lines, title='{} {}'.format(*line))
-                    elif self.limit and i > self.limit:
+                    elif self.limit > -1 and i > self.limit:
                         break
                     
                     logger.info('Processing part {} {}'.format(*line))
@@ -163,6 +163,9 @@ def main():
     
     try:
         start(args.output, args.delay, args.limit)
+    except KeyboardInterrupt:
+        logging.info('Stopped by user')
+        print('Stopped by user')
     except BaseException as e:
         logging.exception(e)
         exit(1)
